@@ -98,7 +98,9 @@ class BaseDAO[T: Base]:
             return new_instances
         except SQLAlchemyError as e:
             # Fallback к обычному методу если bulk insert не поддерживается
-            logger.warning(f"Bulk insert не поддерживается, используем обычный метод: {e}")
+            logger.warning(
+                f"Bulk insert не поддерживается, используем обычный метод: {e}"
+            )
             new_instances = [self.model(**values) for values in values_list]
             self._session.add_all(new_instances)
             logger.info(f"Успешно добавлено {len(new_instances)} записей.")
