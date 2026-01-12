@@ -93,7 +93,7 @@ pyasn1==0.6.1
     # via
     #   python-jose
     #   rsa
-pydantic==2.12.3
+pydantic==2.12.5
     # via
     #   fastapi
     #   fastapi-cloud-cli
