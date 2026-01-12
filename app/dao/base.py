@@ -91,7 +91,7 @@ class BaseDAO[T: Base]:
             # Используем bulk insert для избежания проблем с flush
             stmt = insert(self.model).returning(self.model)
             result = await self._session.execute(stmt, values_list)
-            
+
             # Получаем созданные записи
             new_instances = result.scalars().all()
             logger.info(f"Успешно добавлено {len(values_list)} записей.")
