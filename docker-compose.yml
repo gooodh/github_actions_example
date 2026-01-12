@@ -1,0 +1,24 @@
+services:
+  app:
+    restart: always
+    build: .
+    container_name: "app"
+    command: bash entrypoint.sh
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db_postgres
+
+  db_postgres:
+    image: postgres:15
+    container_name: app_postgres_container
+    restart: always
+    env_file:
+      - .env
+    volumes:
+      - app_postgres:/var/lib/postgresql/data
+    ports:
+      - 5432:5432
+
+volumes:
+  app_postgres:
