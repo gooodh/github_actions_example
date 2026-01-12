@@ -1,0 +1,180 @@
+[project]
+name = "fastapi-sqlalchemy-temp"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "aiosqlite>=0.22.1",
+    "alembic>=1.17.0",
+    "asyncpg>=0.30.0",
+    "bcrypt==4.0.1",
+    "fastapi[all]>=0.119.0",
+    "jinja2>=3.1.6",
+    "loguru>=0.7.3",
+    "passlib[bcrypt]==1.7.4",
+    "prometheus-fastapi-instrumentator>=7.1.0",
+    "pydantic-settings>=2.11.0",
+    "pydantic[email]>=2.12.3",
+    "python-jose>=3.5.0",
+    "sqlalchemy>=2.0.44",
+]
+
+[tool.ruff]
+# Основные настройки
+line-length = 88
+target-version = "py313"
+
+# Директории для исключения
+exclude = [
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".git-rewrite",
+    ".hg",
+    ".mypy_cache",
+    ".nox",
+    ".pants.d",
+    ".pytype",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    "venv",
+    "migrations",
+    "app/migration",  # Исключаем файлы миграций Alembic
+]
+
+# Правила для проверки
+[tool.ruff.lint]
+# Включаем основные правила
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "UP",  # pyupgrade
+    "ARG", # flake8-unused-arguments
+    "SIM", # flake8-simplify
+    "S",   # bandit (security)
+]
+
+# Игнорируем некоторые правила
+ignore = [
+    "S105",
+    "E501",  # line too long (handled by formatter)
+    "B008",  # do not perform function calls in argument defaults
+    "S101",  # use of assert detected (allow in tests)
+    "S105",  # hardcoded password (allow in tests)
+    "S311",  # standard pseudo-random generators are not suitable for security/cryptographic purposes
+    "ARG001", # unused function argument (common in FastAPI dependencies)
+    "B904",  # raise without from in except clause
+]
+
+# Настройки для конкретных файлов
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S101", "ARG001", "ARG002"]  # Allow assert and unused args in tests
+"__init__.py" = ["F401"]  # Allow unused imports in __init__.py
+"app/migration/versions/*" = ["ALL"]  # Ignore all rules for migration files
+
+# Настройки isort (сортировка импортов)
+[tool.ruff.lint.isort]
+known-first-party = ["app", "tests"]
+force-single-line = false
+lines-after-imports = 2
+
+# Настройки форматирования
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+
+[tool.mypy]
+python_version = "3.13"
+warn_return_any = false
+warn_unused_configs = true
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+check_untyped_defs = false
+disallow_untyped_decorators = false
+no_implicit_optional = false
+warn_redundant_casts = false
+warn_unused_ignores = false
+warn_no_return = false
+warn_unreachable = false
+strict_equality = false
+
+[[tool.mypy.overrides]]
+module = [
+    "passlib.*",
+    "jose.*",
+    "prometheus_fastapi_instrumentator.*",
+]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"
+python_classes = "Test*"
+python_functions = "test_*"
+addopts = [
+    "-v",
+    "--tb=short",
+    "--asyncio-mode=auto",
+]
+markers = [
+    "asyncio: marks tests as async",
+    "integration: marks tests as integration tests",
+    "unit: marks tests as unit tests",
+    "slow: marks tests as slow running (performance tests)",
+]
+asyncio_mode = "auto"
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::PendingDeprecationWarning",
+    "ignore::pytest.PytestUnknownMarkWarning",
+    "ignore:.*crypt.*:DeprecationWarning",
+    "ignore:.*Session.add.*:sqlalchemy.exc.SAWarning",
+    "ignore:Unknown pytest.mark.*:pytest.PytestUnknownMarkWarning",
+]
+
+[tool.coverage.run]
+source = ["app"]
+omit = [
+    "*/tests/*",
+    "*/migrations/*",
+    "*/__pycache__/*",
+    "*/venv/*",
+    "*/.venv/*",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if self.debug:",
+    "if settings.DEBUG",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if 0:",
+    "if __name__ == .__main__.:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
+]
+
+[dependency-groups]
+dev = [
+    "mypy>=1.18.2",
+    "pytest>=9.0.2",
+    "pytest-asyncio>=1.3.0",
+]
