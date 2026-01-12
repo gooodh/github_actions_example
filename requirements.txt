@@ -4,7 +4,7 @@ alembic==1.17.0
     # via fastapi-sqlalchemy-temp
 annotated-types==0.7.0
     # via pydantic
-anyio==4.11.0
+anyio==4.12.1
     # via
     #   httpx
     #   starlette
