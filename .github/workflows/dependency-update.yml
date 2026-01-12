@@ -1,0 +1,63 @@
+name: Dependency Update
+
+on:
+  schedule:
+    # Запускается каждый понедельник в 9:00 UTC
+    - cron: '0 9 * * 1'
+  workflow_dispatch: # Позволяет запускать вручную
+
+jobs:
+  update-dependencies:
+    name: Update Dependencies
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.12"
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@v3
+      with:
+        version: "latest"
+
+    - name: Update dependencies
+      run: |
+        # Обновляем основные зависимости
+        uv sync --upgrade
+        
+        # Обновляем тестовые зависимости
+        uv pip install --upgrade -r tests/requirements-test.txt
+        uv pip freeze > tests/requirements-test.txt
+
+    - name: Run tests with updated dependencies
+      run: |
+        uv run pytest tests/ -v --tb=short
+
+    - name: Create Pull Request
+      uses: peter-evans/create-pull-request@v5
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        commit-message: "chore: update dependencies"
+        title: "🔄 Automated dependency update"
+        body: |
+          ## Automated Dependency Update
+          
+          This PR updates project dependencies to their latest versions.
+          
+          ### Changes
+          - Updated Python dependencies
+          - Updated test dependencies
+          
+          ### Testing
+          - ✅ All tests pass with updated dependencies
+          
+          Please review the changes and merge if everything looks good.
+        branch: dependency-update
+        delete-branch: true

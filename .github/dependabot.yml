@@ -1,0 +1,40 @@
+version: 2
+updates:
+  # Обновления Python зависимостей
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "gooodh"  # Замените на ваш username
+    assignees:
+      - "gooodh"  # Замените на ваш username
+    commit-message:
+      prefix: "deps"
+      include: "scope"
+
+  # Обновления GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "gooodh"  # Замените на ваш username
+    commit-message:
+      prefix: "ci"
+      include: "scope"
+
+  # Обновления Docker
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 5

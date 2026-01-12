@@ -1,0 +1,83 @@
+name: Code Quality
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  code-quality:
+    name: Code Quality Check
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.13"
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@v3
+      with:
+        version: "latest"
+
+    - name: Install dependencies
+      run: |
+        uv sync
+        uv pip install ruff mypy
+
+    - name: Run Ruff (linting)
+      run: |
+        uv run ruff check app/ tests/ --diff
+
+    - name: Run Ruff (formatting check)
+      run: |
+        uv run ruff format --check --diff app/ tests/
+
+    - name: Run MyPy (type checking)
+      run: |
+        uv run mypy app/ --ignore-missing-imports --no-strict-optional
+
+    - name: Run Ruff security checks
+      run: |
+        uv run ruff check app/ tests/ --select S
+
+    - name: Check for TODO/FIXME comments
+      run: |
+        echo "Checking for TODO/FIXME comments..."
+        if grep -r "TODO\|FIXME" app/ tests/ --exclude-dir=__pycache__ || true; then
+          echo "Found TODO/FIXME comments. Consider addressing them."
+        fi
+
+  complexity-check:
+    name: Complexity Check
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.13"
+
+    - name: Install tools
+      run: |
+        pip install radon xenon
+
+    - name: Check cyclomatic complexity
+      run: |
+        radon cc app/ -a -nb
+
+    - name: Check maintainability index
+      run: |
+        radon mi app/ -nb
+
+    - name: Check for complex functions
+      run: |
+        xenon --max-absolute B --max-modules A --max-average A app/
