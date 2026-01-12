@@ -3,7 +3,7 @@ from typing import Any, TypeVar
 from loguru import logger
 from pydantic import BaseModel
 from sqlalchemy import delete as sqlalchemy_delete
-from sqlalchemy import func
+from sqlalchemy import func, insert
 from sqlalchemy import update as sqlalchemy_update
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -77,7 +77,6 @@ class BaseDAO[T: Base]:
             new_instance = self.model(**values_dict)
             self._session.add(new_instance)
             logger.info(f"Запись {self.model.__name__} успешно добавлена.")
-            await self._session.flush()
             return new_instance
         except SQLAlchemyError as e:
             logger.error(f"Ошибка при добавлении записи: {e}")
@@ -89,14 +88,21 @@ class BaseDAO[T: Base]:
             f"Добавление нескольких записей {self.model.__name__}. Количество: {len(values_list)}"
         )
         try:
+            # Используем bulk insert для избежания проблем с flush
+            stmt = insert(self.model).returning(self.model)
+            result = await self._session.execute(stmt, values_list)
+            
+            # Получаем созданные записи
+            new_instances = result.scalars().all()
+            logger.info(f"Успешно добавлено {len(values_list)} записей.")
+            return new_instances
+        except SQLAlchemyError as e:
+            # Fallback к обычному методу если bulk insert не поддерживается
+            logger.warning(f"Bulk insert не поддерживается, используем обычный метод: {e}")
             new_instances = [self.model(**values) for values in values_list]
             self._session.add_all(new_instances)
             logger.info(f"Успешно добавлено {len(new_instances)} записей.")
-            await self._session.flush()
             return new_instances
-        except SQLAlchemyError as e:
-            logger.error(f"Ошибка при добавлении нескольких записей: {e}")
-            raise
 
     async def update(self, filters: BaseModel, values: BaseModel):
         filter_dict = filters.model_dump(exclude_unset=True)
@@ -114,7 +120,7 @@ class BaseDAO[T: Base]:
             result: Any = await self._session.execute(query)
             rowcount = result.rowcount or 0
             logger.info(f"Обновлено {rowcount} записей.")
-            await self._session.flush()
+            # Убираем flush() - пусть вызывающий код управляет транзакцией
             return rowcount
         except SQLAlchemyError as e:
             logger.error(f"Ошибка при обновлении записей: {e}")
@@ -131,7 +137,7 @@ class BaseDAO[T: Base]:
             result: Any = await self._session.execute(query)
             rowcount = result.rowcount or 0
             logger.info(f"Удалено {rowcount} записей.")
-            await self._session.flush()
+            # Убираем flush() - пусть вызывающий код управляет транзакцией
             return rowcount
         except SQLAlchemyError as e:
             logger.error(f"Ошибка при удалении записей: {e}")
@@ -171,7 +177,7 @@ class BaseDAO[T: Base]:
                 updated_count += result.rowcount or 0
 
             logger.info(f"Обновлено {updated_count} записей")
-            await self._session.flush()
+            # Убираем flush() - пусть вызывающий код управляет транзакцией
             return updated_count
         except SQLAlchemyError as e:
             logger.error(f"Ошибка при массовом обновлении: {e}")

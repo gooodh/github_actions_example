@@ -1,10 +1,12 @@
 from fastapi import APIRouter, Depends, Response
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dao import RoleDAO, UsersDAO
 from app.auth.models import User
 from app.auth.schemas import (
     EmailModel,
+    PhoneModel,
     RoleAddModel,
     SUserAddDB,
     SUserAuth,
@@ -28,7 +30,7 @@ router = APIRouter()
 async def register_user(
     user_data: SUserRegister, session: AsyncSession = Depends(get_session_with_commit)
 ) -> dict:
-    # Проверка существования пользователя
+    # Проверка существования пользователя по email
     user_dao = UsersDAO(session)
 
     existing_user = await user_dao.find_one_or_none(
@@ -37,14 +39,24 @@ async def register_user(
     if existing_user:
         raise UserAlreadyExistsException
 
+    # Проверка существования пользователя по номеру телефона
+    existing_phone = await user_dao.find_one_or_none(
+        filters=PhoneModel(phone_number=user_data.phone_number)
+    )
+    if existing_phone:
+        raise UserAlreadyExistsException
+
     # Подготовка данных для добавления
     user_data_dict = user_data.model_dump()
     user_data_dict.pop("confirm_password", None)
 
-    # Добавление пользователя
-    await user_dao.add(values=SUserAddDB(**user_data_dict))
-
-    return {"message": "Вы успешно зарегистрированы!"}
+    try:
+        # Добавление пользователя
+        await user_dao.add(values=SUserAddDB(**user_data_dict))
+        return {"message": "Вы успешно зарегистрированы!"}
+    except IntegrityError:
+        # Обработка ошибок целостности базы данных (например, дублирование)
+        raise UserAlreadyExistsException
 
 
 @router.post("/login/")

@@ -19,6 +19,21 @@ class EmailModel(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class PhoneModel(BaseModel):
+    phone_number: str = Field(
+        description="Номер телефона в международном формате, начинающийся с '+'"
+    )
+    model_config = ConfigDict(from_attributes=True)
+
+    @field_validator("phone_number")
+    def validate_phone_number(cls, value: str) -> str:
+        if not re.match(r"^\+\d{5,15}$", value):
+            raise ValueError(
+                'Номер телефона должен начинаться с "+" и содержать от 5 до 15 цифр'
+            )
+        return value
+
+
 class UserBase(EmailModel):
     phone_number: str = Field(
         description="Номер телефона в международном формате, начинающийся с '+'"

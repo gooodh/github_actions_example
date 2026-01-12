@@ -15,9 +15,18 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, declared_attr, mapped_column
 from app.config import DATABASE_PG_URL
 
 
-engine = create_async_engine(url=DATABASE_PG_URL)
+engine = create_async_engine(
+    url=DATABASE_PG_URL,
+    # Добавляем конфигурацию для лучшей обработки concurrent операций
+    pool_pre_ping=True,
+    pool_recycle=3600,
+)
 async_session_maker = async_sessionmaker(
-    engine, class_=AsyncSession, expire_on_commit=False
+    engine, 
+    class_=AsyncSession, 
+    expire_on_commit=False,
+    # Добавляем autoflush=False для избежания автоматических flush операций
+    autoflush=False,
 )
 str_uniq = Annotated[str, mapped_column(unique=True, nullable=False)]
 
