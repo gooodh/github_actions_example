@@ -37,9 +37,18 @@ TestSessionLocal = async_sessionmaker(
 @pytest.fixture(scope="session")
 def event_loop():
     """Создание event loop для всей сессии тестов."""
-    loop = asyncio.get_event_loop_policy().new_event_loop()
+    policy = asyncio.get_event_loop_policy()
+    loop = policy.new_event_loop()
     yield loop
     loop.close()
+
+
+@pytest_asyncio.fixture(scope="session", autouse=True)
+async def setup_test_db():
+    """Настройка и очистка тестовой базы данных."""
+    yield
+    # Закрываем все соединения с базой данных
+    await test_engine.dispose()
 
 
 @pytest_asyncio.fixture(scope="function")
@@ -49,8 +58,11 @@ async def db_session():
         await conn.run_sync(Base.metadata.create_all)
 
     async with TestSessionLocal() as session:
-        yield session
-        await session.rollback()
+        try:
+            yield session
+        finally:
+            await session.rollback()
+            await session.close()
 
     async with test_engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
@@ -77,6 +89,9 @@ async def client(db_session):
         # Для старых версий httpx
         async with AsyncClient(app=app, base_url="http://test") as ac:
             yield ac
+    finally:
+        # Очищаем переопределения зависимостей
+        app.dependency_overrides.clear()
 
 
 @pytest_asyncio.fixture
