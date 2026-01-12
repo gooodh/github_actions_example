@@ -150,7 +150,7 @@ starlette==0.48.0
     # via
     #   fastapi
     #   prometheus-fastapi-instrumentator
-typer==0.19.2
+typer==0.21.1
     # via
     #   fastapi-cli
     #   fastapi-cloud-cli
