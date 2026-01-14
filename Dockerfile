@@ -1,5 +1,5 @@
 # pull official base image
-FROM python:3.13-slim-bookworm AS builder
+FROM python:3.14-slim-bookworm AS builder
 
 # set work directory
 WORKDIR /usr/src/app
@@ -25,7 +25,7 @@ RUN pip wheel --no-cache-dir --no-deps --wheel-dir /usr/src/app/wheels -r requir
 #########
 
 # pull official base image
-FROM python:3.13-slim-bookworm
+FROM python:3.14-slim-bookworm
 
 # create the app user
 RUN groupadd --system app && \
